@@ -1,6 +1,8 @@
 package com.thyamix;
 
 import com.thyamix.handlers.CommandHandler;
+import com.thyamix.utils.CSVStorage;
+import com.thyamix.utils.TaskRunner;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -27,8 +29,14 @@ public class DiscordBot {
 
         this.guild = jda.getGuildById(GUILD_ID);
 
-        this.commandHandler = new CommandHandler(guild);
+        CSVStorage storage = new CSVStorage("RefreshChecker");
+
+        this.commandHandler = new CommandHandler(guild, jda, storage);
 
         jda.addEventListener(this.commandHandler);
+
+        TaskRunner taskRunner = new TaskRunner(commandHandler, storage);
+
+        taskRunner.start();
     }
 }
