@@ -1,5 +1,6 @@
 package com.thyamix;
 
+import com.thyamix.handlers.CommandHandler;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -11,6 +12,7 @@ public class DiscordBot {
 
     private final @NotNull JDA jda;
     private final @NotNull Guild guild;
+    private final CommandHandler commandHandler;
 
     public DiscordBot() {
         if (BOT_TOKEN == null || BOT_TOKEN.isEmpty()) {
@@ -24,5 +26,9 @@ public class DiscordBot {
         }
 
         this.guild = jda.getGuildById(GUILD_ID);
+
+        this.commandHandler = new CommandHandler(guild);
+
+        jda.addEventListener(this.commandHandler);
     }
 }
