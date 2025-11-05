@@ -17,11 +17,13 @@ public class CommandHandler extends ListenerAdapter {
     private final TextChannel refreshChannel;
     private final Role stockpileRole;
     private final CSVStorage storage;
+    private final Guild guild;
 
     public CommandHandler(Guild guild, JDA jda, CSVStorage storage) {
         this.refreshChannel = jda.getTextChannelById("1435556429749555263");
         this.stockpileRole = guild.getRoleById("1435555973480583219");
         this.storage = storage;
+        this.guild = guild;
 
         List<CommandData> commands = List.of(
                 Commands.slash("refresh", "Refreshes the stockpile for foxhole.")
@@ -40,18 +42,22 @@ public class CommandHandler extends ListenerAdapter {
     }
 
     private void handleRefresh(SlashCommandInteractionEvent e) {
-        e.reply("Thank you for refreshing stockpile").setEphemeral(true).queue();
+        if (e.getMember().getRoles().contains(this.guild.getRoleById("1435555973480583219"))) {
+            e.reply("Thank you for refreshing stockpile").setEphemeral(true).queue();
 
-        this.refreshChannel.sendMessage("Stockpile refreshed. I will ping you all once it requires refreshing again.").queue();
+            this.refreshChannel.sendMessage("Stockpile refreshed. I will ping you all once it requires refreshing again.").queue();
 
-        this.storage.addEntry(StoredType.REFRESH, e.getUser().getId(), e.getUser().getName(), System.currentTimeMillis() / 1000);
+            this.storage.addEntry(StoredType.REFRESH, e.getUser().getId(), e.getUser().getName(), System.currentTimeMillis() / 1000);
+        } else {
+            e.reply("You do not have the stockpile role. You cannot refresh stockpile.").setEphemeral(true).queue();
+        }
     }
 
     public void alert(String timeLeft) {
         this.refreshChannel.sendMessage(this.stockpileRole.getAsMention() + String.format("You need to refresh the stockpile. You have %s left", timeLeft)).queue();
     }
 
-    public void failed () {
+    public void failed() {
         this.refreshChannel.sendMessage(this.stockpileRole.getAsMention() + "You have failed to refresh stockpile. It has now likely expired.").queue();
     }
 }
