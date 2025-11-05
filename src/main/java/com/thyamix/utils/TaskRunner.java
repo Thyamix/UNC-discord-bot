@@ -41,7 +41,7 @@ public class TaskRunner {
                 case StoredType.LASTPING -> handleLastPing(secondsAgo);
             }
 
-        }, 0, 1, TimeUnit.SECONDS);
+    }, 0, 1, TimeUnit.MINUTES);
     }
 
     private void handleRefresh(long secondsAgo) {
