@@ -3,8 +3,6 @@ package com.thyamix.handlers;
 import com.thyamix.config.BotConfig;
 import com.thyamix.enums.StoredType;
 import com.thyamix.tasks.StockpileStatusTask;
-import com.thyamix.utils.CSVStorage;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -55,7 +53,7 @@ public class CommandHandler extends ListenerAdapter {
 
             this.refreshChannel.sendMessage("Stockpile refreshed. I will ping you all once it requires refreshing again.").queue();
 
-            this.stockpileStatusTask.getStorage().addEntry(StoredType.REFRESH, e.getUser().getId(), e.getUser().getName(), System.currentTimeMillis() / 1000);
+            this.stockpileStatusTask.getRefreshStorage().addEntry(StoredType.REFRESH, e.getUser().getId(), e.getUser().getName(), System.currentTimeMillis() / 1000);
         } else {
             e.reply("You do not have the stockpile role. You cannot refresh stockpile.").setEphemeral(true).queue();
         }

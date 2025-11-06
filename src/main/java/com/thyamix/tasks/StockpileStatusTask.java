@@ -6,75 +6,112 @@ import com.thyamix.handlers.CommandHandler;
 import com.thyamix.utils.CSVStorage;
 import com.thyamix.utils.TaskRunner;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class StockpileStatusTask implements Task {
-    private final long hour;
+    private final long hourInSeconds; //used for testing. When running should always be 3600 for seconds in 1 hour.
 
-    private final CSVStorage storage;
-    private final TaskRunner taskRunner;
+    private final CSVStorage refreshStorage;
+    private final CSVStorage refreshAlertStorage;
     private final CommandHandler commandHandler;
+    private final TaskRunner taskRunner;
 
     public StockpileStatusTask(BotConfig config, CommandHandler commandHandler) {
-        this.storage = new CSVStorage("RefreshChecker");
+        this.refreshStorage = new CSVStorage("RefreshStorage");
+        this.refreshAlertStorage = new CSVStorage("RefreshAlertStorage");
         this.commandHandler = commandHandler;
-        this.taskRunner = new TaskRunner(config, this, commandHandler, storage);
+        this.taskRunner = new TaskRunner(config, this, commandHandler, refreshStorage);
+        this.hourInSeconds = config.getSecondsInHour();
 
-        this.hour = config.getSecondsInHour();
-
-        taskRunner.start();
+        this.taskRunner.start();
     }
 
     public void run() {
-        Optional<String[]> entryOptional = storage.getLastEntry();
-        String[] entry;
+        Optional<String[]> entryOptional = refreshStorage.getLastEntry();
+        String[] refreshEntry;
         if (entryOptional.isPresent()) {
-            entry = entryOptional.get();
+            refreshEntry = entryOptional.get();
         } else {
             return;
         }
 
         long now = System.currentTimeMillis() / 1000;
 
-        long secondsAgo = now - Long.parseLong(entry[3]);
+        long secondsAgo = now - Long.parseLong(refreshEntry[3]);
 
-        switch (StoredType.valueOf(entry[0])) {
-            case StoredType.REFRESH -> handleRefresh(secondsAgo);
-            case StoredType.FIRSTPING -> handleFirstPing(secondsAgo);
-            case StoredType.SECONDPING -> handleSecondPing(secondsAgo);
-            case StoredType.LASTPING -> handleLastPing(secondsAgo);
+        String[] refreshAlertEntry;
+        entryOptional = refreshAlertStorage.getLastEntry();
+        if (entryOptional.isPresent()) {
+            refreshAlertEntry = entryOptional.get();
+            if (Objects.equals(refreshAlertEntry[0], "type")) {
+                handleRefresh(secondsAgo);
+            }
+            if (Long.parseLong(refreshAlertEntry[3]) > Long.parseLong(refreshEntry[3])) {
+                switch (StoredType.valueOf(refreshAlertEntry[0])) {
+                    case StoredType.FIRSTPING -> handleFirstPing(secondsAgo);
+                    case StoredType.SECONDPING -> handleSecondPing(secondsAgo);
+                    case StoredType.LASTPING -> handleLastPing(secondsAgo);
+                }
+                return;
+            }
         }
+        handleRefresh(secondsAgo);
     }
 
     private void handleRefresh(long secondsAgo) {
-        if (secondsAgo >= hour * 36) {
-            this.commandHandler.alert("12 hours");
-            storage.addEntry(StoredType.FIRSTPING, "", "Bot", System.currentTimeMillis() / 1000);
+        if (secondsAgo >= hourInSeconds * 36 && secondsAgo < hourInSeconds * 44) {
+            this.commandHandler.alert("less than 12 hours");
+            refreshAlertStorage.addEntry(StoredType.FIRSTPING, "", "Bot", System.currentTimeMillis() / 1000);
+        }
+        if (secondsAgo >= hourInSeconds * 44 && secondsAgo < hourInSeconds * 47) {
+            this.commandHandler.alert("less than 4 hours");
+            refreshAlertStorage.addEntry(StoredType.SECONDPING, "", "Bot", System.currentTimeMillis() / 1000);
+        }
+        if (secondsAgo >= hourInSeconds * 47 && secondsAgo < hourInSeconds * 48) {
+            this.commandHandler.alert("less than one 1 hour");
+            refreshAlertStorage.addEntry(StoredType.LASTPING, "", "Bot", System.currentTimeMillis() / 1000);
+        }
+        if (secondsAgo >= 48) {
+            this.commandHandler.failed();
+            refreshAlertStorage.addEntry(StoredType.EXPIRED, "", "Bot", System.currentTimeMillis() / 1000);
         }
     }
 
     private void handleFirstPing(long secondsAgo) {
-        if (secondsAgo >= hour * 8) {
-            this.commandHandler.alert("4 hours");
-            storage.addEntry(StoredType.SECONDPING, "", "Bot", System.currentTimeMillis() / 1000);
+        if (secondsAgo >= hourInSeconds * 44 && secondsAgo < hourInSeconds * 47) {
+            this.commandHandler.alert("less than 4 hours");
+            refreshAlertStorage.addEntry(StoredType.SECONDPING, "", "Bot", System.currentTimeMillis() / 1000);
+        }
+        if (secondsAgo >= hourInSeconds * 47 && secondsAgo < hourInSeconds * 48) {
+            this.commandHandler.alert("less than one 1 hour");
+            refreshAlertStorage.addEntry(StoredType.LASTPING, "", "Bot", System.currentTimeMillis() / 1000);
+        }
+        if (secondsAgo >= 48) {
+            this.commandHandler.failed();
+            refreshAlertStorage.addEntry(StoredType.EXPIRED, "", "Bot", System.currentTimeMillis() / 1000);
         }
     }
 
     private void handleSecondPing(long secondsAgo) {
-        if (secondsAgo >= hour * 3) {
-            this.commandHandler.alert("1 hour");
-            storage.addEntry(StoredType.LASTPING, "", "Bot", System.currentTimeMillis() / 1000);
+        if (secondsAgo >= hourInSeconds * 47 && secondsAgo < hourInSeconds * 48) {
+            this.commandHandler.alert("less than one 1 hour");
+            refreshAlertStorage.addEntry(StoredType.LASTPING, "", "Bot", System.currentTimeMillis() / 1000);
+        }
+        if (secondsAgo >= 48) {
+            this.commandHandler.failed();
+            refreshAlertStorage.addEntry(StoredType.EXPIRED, "", "Bot", System.currentTimeMillis() / 1000);
         }
     }
 
     private void handleLastPing(long secondsAgo) {
-        if (secondsAgo >= hour) {
+        if (secondsAgo >= 48) {
             this.commandHandler.failed();
-            storage.addEntry(StoredType.EXPIRED, "", "Bot", System.currentTimeMillis() / 1000);
+            refreshAlertStorage.addEntry(StoredType.EXPIRED, "", "Bot", System.currentTimeMillis() / 1000);
         }
     }
 
-    public CSVStorage getStorage() {
-        return storage;
+    public CSVStorage getRefreshStorage() {
+        return refreshStorage;
     }
 }
