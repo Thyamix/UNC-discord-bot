@@ -1,6 +1,8 @@
 package com.thyamix.handlers;
 
+import com.thyamix.config.BotConfig;
 import com.thyamix.enums.StoredType;
+import com.thyamix.tasks.StockpileStatusTask;
 import com.thyamix.utils.CSVStorage;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -14,16 +16,22 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import java.util.List;
 
 public class CommandHandler extends ListenerAdapter {
+    private final BotConfig config;
+
     private final TextChannel refreshChannel;
     private final Role stockpileRole;
-    private final CSVStorage storage;
     private final Guild guild;
 
-    public CommandHandler(Guild guild, JDA jda, CSVStorage storage) {
-        this.refreshChannel = jda.getTextChannelById("1435556429749555263");
-        this.stockpileRole = guild.getRoleById("1435555973480583219");
-        this.storage = storage;
-        this.guild = guild;
+    private final StockpileStatusTask stockpileStatusTask;
+
+    public CommandHandler(BotConfig config) {
+        this.refreshChannel = config.getJda().getTextChannelById(config.getStockpileChannelId());
+        this.stockpileRole = config.getGuild().getRoleById(config.getStockpileRoleId());
+        this.guild = config.getGuild();
+
+        this.config = config;
+
+        this.stockpileStatusTask = new StockpileStatusTask(config, this);
 
         List<CommandData> commands = List.of(
                 Commands.slash("refresh", "Refreshes the stockpile for foxhole.")
@@ -42,12 +50,12 @@ public class CommandHandler extends ListenerAdapter {
     }
 
     private void handleRefresh(SlashCommandInteractionEvent e) {
-        if (e.getMember().getRoles().contains(this.guild.getRoleById("1435555973480583219"))) {
+        if (e.getMember().getRoles().contains(this.guild.getRoleById(config.getStockpileRoleId()))) {
             e.reply("Thank you for refreshing stockpile").setEphemeral(true).queue();
 
             this.refreshChannel.sendMessage("Stockpile refreshed. I will ping you all once it requires refreshing again.").queue();
 
-            this.storage.addEntry(StoredType.REFRESH, e.getUser().getId(), e.getUser().getName(), System.currentTimeMillis() / 1000);
+            this.stockpileStatusTask.getStorage().addEntry(StoredType.REFRESH, e.getUser().getId(), e.getUser().getName(), System.currentTimeMillis() / 1000);
         } else {
             e.reply("You do not have the stockpile role. You cannot refresh stockpile.").setEphemeral(true).queue();
         }

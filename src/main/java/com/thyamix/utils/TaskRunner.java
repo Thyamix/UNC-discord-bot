@@ -1,5 +1,6 @@
 package com.thyamix.utils;
 
+import com.thyamix.config.BotConfig;
 import com.thyamix.enums.StoredType;
 import com.thyamix.handlers.CommandHandler;
 
@@ -9,15 +10,20 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class TaskRunner {
-    private final int HOUR = 3600;
+    private final long hour;
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final CSVStorage storage;
     private final CommandHandler commandHandler;
 
-    public TaskRunner(CommandHandler commandHandler, CSVStorage storage) {
+    private final BotConfig config;
+
+    public TaskRunner(BotConfig config, CommandHandler commandHandler, CSVStorage storage) {
         this.storage = storage;
         this.commandHandler = commandHandler;
+        this.config = config;
+
+        this.hour = config.getSecondsInHour();
     }
 
     public void start() {
@@ -41,29 +47,29 @@ public class TaskRunner {
                 case StoredType.LASTPING -> handleLastPing(secondsAgo);
             }
 
-    }, 0, 1, TimeUnit.MINUTES);
+    }, 0, this.config.getPollingRate(), TimeUnit.SECONDS);
     }
 
     private void handleRefresh(long secondsAgo) {
-        if (secondsAgo >= HOUR * 36) {
+        if (secondsAgo >= hour * 36) {
             commandHandler.alert("12 hours");
             storage.addEntry(StoredType.FIRSTPING, "", "Bot", System.currentTimeMillis() / 1000);
         }
     }
     private void handleFirstPing(long secondsAgo) {
-        if (secondsAgo >= HOUR * 8) {
+        if (secondsAgo >= hour * 8) {
             commandHandler.alert("4 hours");
             storage.addEntry(StoredType.SECONDPING, "", "Bot", System.currentTimeMillis() / 1000);
         }
     }
     private void handleSecondPing(long secondsAgo) {
-        if (secondsAgo >= HOUR * 3) {
+        if (secondsAgo >= hour * 3) {
             commandHandler.alert("1 hour");
             storage.addEntry(StoredType.LASTPING, "", "Bot", System.currentTimeMillis() / 1000);
         }
     }
     private void handleLastPing(long secondsAgo) {
-        if (secondsAgo >= HOUR) {
+        if (secondsAgo >= hour) {
             commandHandler.failed();
             storage.addEntry(StoredType.EXPIRED, "", "Bot", System.currentTimeMillis() / 1000);
         }
