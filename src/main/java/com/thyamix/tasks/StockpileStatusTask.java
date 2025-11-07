@@ -58,6 +58,23 @@ public class StockpileStatusTask implements Task {
         handleRefresh(secondsAgo);
     }
 
+    public String getTimeleftTimestamp() {
+        Optional<String[]> entryOptional = refreshStorage.getLastEntry();
+        String[] refreshEntry;
+        long timestamp = 0;
+        long now = System.currentTimeMillis() / 1000;
+        if (entryOptional.isPresent()) {
+            refreshEntry = entryOptional.get();
+            timestamp = Long.parseLong(refreshEntry[3]) + hourInSeconds * 48;
+        } else {
+            return "Not stockpile currently tracked.";
+        }
+        if (timestamp > now) {
+            return String.format("The stockpile expires <t:%d:R>", timestamp);
+        }
+        return "Stockpile has expired.";
+    }
+
     private void handleRefresh(long secondsAgo) {
         if (secondsAgo >= hourInSeconds * 36 && secondsAgo < hourInSeconds * 44) {
             this.commandHandler.alert("less than 12 hours");

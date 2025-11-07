@@ -32,7 +32,8 @@ public class CommandHandler extends ListenerAdapter {
         this.stockpileStatusTask = new StockpileStatusTask(config, this);
 
         List<CommandData> commands = List.of(
-                Commands.slash("refresh", "Refreshes the stockpile for foxhole.")
+                Commands.slash("refresh", "Refreshes the stockpile for foxhole."),
+                Commands.slash("timeleft", "How long left before foxhole stockpile timeout")
         );
 
         guild.updateCommands()
@@ -44,6 +45,17 @@ public class CommandHandler extends ListenerAdapter {
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         switch (event.getName()) {
             case "refresh" -> handleRefresh(event);
+            case "timeleft" -> handleTimeleft(event);
+        }
+    }
+
+    private void handleTimeleft(SlashCommandInteractionEvent e) {
+        if (e.getMember().getRoles().contains(this.guild.getRoleById(config.getStockpileRoleId()))) {
+            e.reply(this.stockpileStatusTask.getTimeleftTimestamp()).setEphemeral(true).queue();
+
+            this.stockpileStatusTask.getRefreshStorage().addEntry(StoredType.REFRESH, e.getUser().getId(), e.getUser().getName(), System.currentTimeMillis() / 1000);
+        } else {
+            e.reply("You do not have the stockpile role. You cannot check stockpile timout.").setEphemeral(true).queue();
         }
     }
 
