@@ -7,5 +7,5 @@ stockpile_id = '1435921846729179277'
 stockpile_id = '1435921769168109608'
 
 [testing]
-polling = 1 # 60 expected when not in testing. Time in seconds between polling.
-hour = 1 # 3600 exected when not in testing. How long and hour is in seconds.
+polling = 60 # 60 expected when not in testing. Time in seconds between polling.
+hour = 3600 # 3600 exected when not in testing. How long and hour is in seconds.

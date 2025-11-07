@@ -12,15 +12,11 @@ import java.util.concurrent.TimeUnit;
 
 public class TaskRunner {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private final CSVStorage storage;
-    private final CommandHandler commandHandler;
 
     private final BotConfig config;
     private final Task task;
 
-    public TaskRunner(BotConfig config, Task task, CommandHandler commandHandler, CSVStorage storage) {
-        this.storage = storage;
-        this.commandHandler = commandHandler;
+    public TaskRunner(BotConfig config, Task task) {
         this.config = config;
         this.task = task;
     }
