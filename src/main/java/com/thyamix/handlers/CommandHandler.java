@@ -52,8 +52,6 @@ public class CommandHandler extends ListenerAdapter {
     private void handleTimeleft(SlashCommandInteractionEvent e) {
         if (e.getMember().getRoles().contains(this.guild.getRoleById(config.getStockpileRoleId()))) {
             e.reply(this.stockpileStatusTask.getTimeleftTimestamp()).setEphemeral(true).queue();
-
-            this.stockpileStatusTask.getRefreshStorage().addEntry(StoredType.REFRESH, e.getUser().getId(), e.getUser().getName(), System.currentTimeMillis() / 1000);
         } else {
             e.reply("You do not have the stockpile role. You cannot check stockpile timout.").setEphemeral(true).queue();
         }
