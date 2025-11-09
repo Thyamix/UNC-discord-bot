@@ -53,6 +53,7 @@ public class StockpileStatusTask implements Task {
                     case StoredType.SECONDPING -> handleSecondPing(secondsAgo);
                     case StoredType.LASTPING -> handleLastPing(secondsAgo);
                 }
+                return;
             }
         }
         handleRefresh(secondsAgo);

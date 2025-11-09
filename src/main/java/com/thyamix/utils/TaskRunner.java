@@ -1,11 +1,8 @@
 package com.thyamix.utils;
 
 import com.thyamix.config.BotConfig;
-import com.thyamix.enums.StoredType;
-import com.thyamix.handlers.CommandHandler;
 import com.thyamix.tasks.Task;
 
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
