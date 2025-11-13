@@ -31,9 +31,26 @@ public class CSVStorage {
         try (ReversedLinesFileReader reader = new ReversedLinesFileReader(file)) {
             String lastLine;
             while ((lastLine = reader.readLine()) != null) {
-                if (!lastLine.startsWith("userId")) { // skip header
-                    return Optional.of(lastLine.split(","));
+                if (lastLine.isBlank()) {
+                    continue;
                 }
+
+                String[] parts = lastLine.split(",");
+                if (parts.length < 4) {
+                    continue;
+                }
+
+                if ("timestamp".equals(parts[3])) {
+                    continue;
+                }
+
+                try {
+                    Long.parseLong(parts[3]);
+                } catch (NumberFormatException ex) {
+                    continue;
+                }
+
+                return Optional.of(parts);
             }
         } catch (IOException e) {
             e.printStackTrace();

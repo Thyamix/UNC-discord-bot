@@ -2,8 +2,6 @@ package com.thyamix;
 
 import com.thyamix.config.BotConfig;
 import com.thyamix.handlers.CommandHandler;
-import com.thyamix.utils.TaskRunner;
-
 
 public class DiscordBot {
     private final CommandHandler commandHandler;
